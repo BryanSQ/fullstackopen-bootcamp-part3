@@ -1,0 +1,16 @@
+{
+  "name": "phonebook_backend",
+  "version": "1.0.0",
+  "description": "Backend for the phonebook app (fullstackopen bootcamp)",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Bryan Sandi",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "morgan": "^1.10.0"
+  }
+}
