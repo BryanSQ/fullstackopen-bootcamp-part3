@@ -15,6 +15,8 @@ app.use(morgan(format))
 
 app.use(cors())
 
+app.use(express.static('dist'))
+
 let persons = [
   { 
     "id": 1,
