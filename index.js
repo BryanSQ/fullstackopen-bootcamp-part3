@@ -18,8 +18,9 @@ mongoose.connect(url)
 
 
 const app = express()
-
+app.use(express.static('dist'))
 app.use(express.json())
+
 
 morgan.token('body', (req, res) => {
   return JSON.stringify(req.body)
@@ -30,7 +31,14 @@ app.use(morgan(format))
 
 app.use(cors())
 
-app.use(express.static('dist'))
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  next(error)
+}
+
+// this has to be the last loaded middleware.
+app.use(errorHandler)
 
 let persons = [
   { 
@@ -63,43 +71,46 @@ app.get('/api/persons', (req, res) => {
 })
 
 // 3.2
-app.get('/info', (req, res) => {
-  const people = `Phonebook has info for ${persons.length} people`
+app.get('/info', (req, res, next) => {
   const date = new Date()
-  const info = `<p>${people}</p>\
-                <p>${date}</p>`
-  res.send(info)
+  Person.find({})
+    .then(returnedPeople => {
+      const countStat = `Phonebook has info for ${returnedPeople.length} people`
+      const info = `<p>${countStat}</p>\
+                    <p>${date}</p>`
+      res.send(info)
+    })
+    .catch(error => next(error))
 })
 
 //3.3
-app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-
-  const person = persons.find(person => person.id === id)
-
-  if (person){
-    res.json(person)
-  }
-  else{
-    res.status(404).end()
-  }
-
+app.get('/api/persons/:id', (req, res, next) => {
+  const id = req.params.id
+  console.log(id);
+  Person.findById(id)
+    .then(person => {
+      if (person){
+        res.json(person)
+      }
+      else{
+        res.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
-// 3.4
-app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  persons = persons.filter(person => person.id !== id)
-
-  res.status(204).end()
+// 3.4 | 3.15
+app.delete('/api/persons/:id', (req, res, next) => {
+  Person.findByIdAndDelete(req.params.id)
+    .then(result => {
+      res.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
-const generateId = () => {
-  return Math.floor(Math.random()* 10000)
-}
 
 // 3.5
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   const body = req.body
 
   // 3.6
@@ -118,8 +129,24 @@ app.post('/api/persons', (req, res) => {
     .then(saved => {
       res.json(saved)
     })
+    .catch(error => next(error))
 
-  res.json(newPerson)
+})
+
+app.put('/api/persons/:id', (req, res, next) => {
+  const id = req.params.id
+  const body = req.body
+
+  const person = {
+    name: body.name,
+    number: body.number
+  }
+
+  Person.findByIdAndUpdate(id, person, {new: true})
+    .then(updated => {
+      res.json(updated)
+    })
+    .catch(error => next(error))
 })
 
 
