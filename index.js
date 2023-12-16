@@ -1,6 +1,21 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const mongoose = require('mongoose')
+const Person = require('./models/person')
+
+const url = process.env.MONGODB_URI
+
+mongoose.set('strictQuery', false)
+mongoose.connect(url)
+  .then(res => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.log('error connecting to MongoDB', error.message);
+  })
+
 
 const app = express()
 
@@ -42,7 +57,9 @@ let persons = [
 
 // 3.1
 app.get('/api/persons', (req, res) => {
-  res.json(persons)
+  Person.find({}).then(people => {
+    res.json(people)
+  })
 })
 
 // 3.2
@@ -91,23 +108,16 @@ app.post('/api/persons', (req, res) => {
       error: "Missing info"
     })
   }
+  
+  const newPerson = new Person({
+    name: body.name,
+    number: body.number
+  })
 
-  const exists = persons.find(person => person.name.toLowerCase() === body.name.toLowerCase())
-
-  if (exists){
-    return res.status(400).json(
-      {
-        error: "Name must be unique"
-      }
-    )
-  }
-
-  const newPerson = {
-    ...body,
-    id: generateId()
-  }
-
-  persons = persons.concat(newPerson)
+  newPerson.save()
+    .then(saved => {
+      res.json(saved)
+    })
 
   res.json(newPerson)
 })
